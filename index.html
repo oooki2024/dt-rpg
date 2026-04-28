@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>デザイン思考RPG</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f8f7f4;color:#1a1a1a;min-height:100vh;padding:1rem}
+  #app{max-width:680px;margin:0 auto;padding:1rem 0}
+  .ph-bar{display:flex;gap:6px;margin-bottom:1rem}
+  .ph{flex:1;padding:6px 3px;border-radius:8px;font-size:11px;text-align:center;border:1px solid #e0ddd6;color:#888;background:#f1efe8;transition:all 0.3s}
+  .ph.active{background:#eeedfe;border-color:#afa9ec;color:#3c3489;font-weight:600}
+  .ph.done{background:#eaf3de;border-color:#97c459;color:#27500a}
+  .card{background:#fff;border:1px solid #e8e5de;border-radius:12px;padding:1.25rem;margin-bottom:1rem}
+  .scene-lbl{font-size:11px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px}
+  #story-text{font-size:15px;line-height:1.7;white-space:pre-wrap}
+  .npc-wrap{border-left:3px solid #7f77dd;border-radius:0 8px 8px 0;padding:12px 16px;margin-bottom:1rem;background:#f5f4ff}
+  .npc-name{font-size:12px;font-weight:600;color:#534ab7;margin-bottom:4px}
+  .npc-text{font-size:14px;line-height:1.6}
+  .npc-loading{color:#aaa;font-style:italic}
+  #choices{display:flex;flex-direction:column;gap:8px;margin-bottom:1rem}
+  .ch{background:#fff;border:1px solid #d8d5ce;border-radius:8px;padding:12px 16px;font-size:14px;text-align:left;cursor:pointer;transition:all 0.15s;line-height:1.5}
+  .ch:hover{background:#f5f4ff;border-color:#afa9ec}
+  .ch:disabled{opacity:0.4;cursor:not-allowed}
+  .insight{background:#eeedfe;border:1px solid #afa9ec;border-radius:8px;padding:8px 12px;margin-bottom:1rem;font-size:13px;color:#3c3489}
+  .insight-lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#534ab7;margin-bottom:3px}
+  .timer-row{display:flex;align-items:center;gap:8px;margin-bottom:1rem;font-size:12px;color:#888}
+  .tbar-wrap{flex:1;height:3px;background:#e8e5de;border-radius:2px;overflow:hidden}
+  #tbar{height:100%;width:0%;background:#7f77dd;transition:width 1s linear;border-radius:2px}
+  .score-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:12px 0}
+  .sc{background:#f8f7f4;border-radius:8px;padding:8px;text-align:center}
+  .sc-l{font-size:11px;color:#888;margin-bottom:3px}
+  .sc-v{font-size:20px;font-weight:600}
+  .result-box{background:#eaf3de;border:1px solid #97c459;border-radius:12px;padding:1.25rem;margin-bottom:1rem}
+  .result-box h3{font-size:16px;font-weight:600;color:#27500a;margin-bottom:6px}
+  .result-box p{font-size:14px;color:#3b6d11;line-height:1.7;margin-bottom:8px}
+  .survey-box{background:#fff;border:1px solid #e8e5de;border-radius:12px;padding:1.25rem;margin-bottom:1rem}
+  .survey-box h3{font-size:15px;font-weight:600;margin-bottom:1rem}
+  .q-block{margin-bottom:1rem}
+  .q-text{font-size:13px;color:#555;margin-bottom:6px}
+  .likert{display:flex;gap:5px}
+  .lk{flex:1;padding:6px 2px;border:1px solid #d8d5ce;border-radius:8px;font-size:11px;text-align:center;cursor:pointer;color:#888;background:#f8f7f4;transition:all 0.15s}
+  .lk.sel{background:#eeedfe;border-color:#7f77dd;color:#3c3489;font-weight:600}
+  .lk:hover{border-color:#afa9ec}
+  textarea{width:100%;padding:10px;font-size:13px;border:1px solid #d8d5ce;border-radius:8px;background:#f8f7f4;resize:vertical;min-height:70px;font-family:inherit}
+  .btn-row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+  .btn{background:#fff;border:1px solid #d8d5ce;border-radius:8px;padding:9px 18px;font-size:13px;cursor:pointer;transition:all 0.15s}
+  .btn:hover{background:#f5f4ff;border-color:#afa9ec}
+  .log-wrap{border-top:1px solid #e8e5de;padding-top:10px;margin-top:4px}
+  .log-head{font-size:11px;color:#aaa;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px}
+  .le{font-size:12px;color:#888;line-height:1.6;padding:1px 0}
+  .le.ph-log{color:#534ab7;font-weight:600}
+  .notice{font-size:12px;color:#3b6d11;padding:6px 0}
+  .worker-config{background:#fff8e1;border:1px solid #f0c040;border-radius:8px;padding:12px;margin-bottom:1rem;font-size:13px}
+  .worker-config input{width:100%;padding:8px;border:1px solid #d8d5ce;border-radius:6px;font-size:13px;margin-top:6px;font-family:monospace}
+  h1{font-size:22px;font-weight:600;margin-bottom:4px}
+  .subtitle{font-size:13px;color:#888;margin-bottom:1.5rem}
+</style>
+</head>
+<body>
+<div id="app">
+  <h1>デザイン思考RPG</h1>
+  <p class="subtitle">デザイン思考の5フェーズを体験する教育ゲーム</p>
+
+  <div class="worker-config" id="cfg-box">
+    <div style="font-weight:600;margin-bottom:4px">Cloudflare Worker URL を設定してください</div>
+    <div style="color:#666;font-size:12px">例: https://dt-rpg-proxy.your-name.workers.dev</div>
+    <input type="text" id="worker-url" placeholder="https://your-worker.workers.dev" />
+    <div class="btn-row" style="margin-top:8px">
+      <button class="btn" onclick="saveWorkerUrl()">設定して開始</button>
+    </div>
+  </div>
+
+  <div id="game-area" style="display:none">
+    <div class="ph-bar" id="phbar">
+      <div class="ph active" id="ps0">共感</div>
+      <div class="ph" id="ps1">定義</div>
+      <div class="ph" id="ps2">アイデア</div>
+      <div class="ph" id="ps3">実装</div>
+      <div class="ph" id="ps4">テスト</div>
+    </div>
+    <div class="timer-row">
+      <span id="tval">0:00</span>
+      <div class="tbar-wrap"><div id="tbar"></div></div>
+      <span id="tpct">0% / 7分</span>
+    </div>
+    <div class="card">
+      <div class="scene-lbl" id="scene-lbl">場面</div>
+      <div id="story-text"></div>
+    </div>
+    <div id="npc-area"></div>
+    <div id="insight-area"></div>
+    <div id="choices"></div>
+    <div id="result-area"></div>
+    <div id="survey-area"></div>
+    <div class="log-wrap">
+      <div class="log-head">行動ログ</div>
+      <div id="log-entries"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const TOTAL=420;
+let workerUrl='',startT,timerInt,cur,score={e:0,c:0,cr:0,a:0},log=[],surveyDone=false,surveyAns={},sessionId=Date.now();
+
+const phases=[{l:'共感'},{l:'定義'},{l:'アイデア'},{l:'実装'},{l:'テスト'}];
+
+const nodes={
+  start:{ph:0,title:'プロローグ',text:'あなたはデザイン思考の見習い研究者。小さな地方都市「テクノラ市」に到着した。市長から「住民が何かに困っているらしいが、原因がわからない」という依頼を受けた。\n\nまず、誰に話を聞くべきだろうか？',npcKey:null,insight:null,choices:[
+    {t:'市役所で高齢の住民・田中さん（70代）に話を聞く',next:'tanaka',s:{e:1}},
+    {t:'商店街で店主・鈴木さん（40代）に声をかける',next:'suzuki',s:{e:1}},
+    {t:'公園で子どもたちの様子をじっくり観察する',next:'park',s:{e:2}},
+  ]},
+  tanaka:{ph:0,title:'共感 — 傾聴',text:'田中さんは市役所のベンチに座っていた。どう声をかけるか？',npcKey:'tanaka',insight:'高齢者の移動手段・デジタル格差の問題',choices:[
+    {t:'「具体的にどんな場面で困りますか？」と深掘りする',next:'define',s:{e:2}},
+    {t:'「スマホを教えてあげましょう」とすぐ解決策を出す',next:'define_low',s:{e:0}},
+  ]},
+  suzuki:{ph:0,title:'共感 — 観察',text:'鈴木さんは商店の前で暗い顔をしていた。',npcKey:'suzuki',insight:'交通問題が経済活動にも影響している',choices:[
+    {t:'「他にも困っている方を紹介してもらえますか？」',next:'define',s:{e:2}},
+    {t:'「バス会社に請願書を出しましょう」と提案する',next:'define_low',s:{e:0}},
+  ]},
+  park:{ph:0,title:'共感 — 行動観察',text:'公園では親たちが不安そうに子どもたちを見守っている。',npcKey:'parent',insight:'交通問題が子育て世代の行動にも影響している',choices:[
+    {t:'1時間かけてさらに観察・記録する',next:'define',s:{e:3}},
+    {t:'ここまでのデータで次に進む',next:'define',s:{e:1}},
+  ]},
+  define:{ph:1,title:'定義 — 問題を絞る',text:'ヒアリングを終えた。複数の課題が浮かび上がった。どれを「今回解くべき問題」として定義するか？',npcKey:null,insight:null,choices:[
+    {t:'「バスを増便してほしい」→ サービス要望として定義',next:'ideate_low',s:{c:0}},
+    {t:'「高齢者・子育て世代が移動手段の不足で孤立している」→ 人間中心の定義',next:'ideate',s:{c:3}},
+    {t:'「市民がデジタルサービスを使えていない」→ デジタル格差として定義',next:'ideate_mid',s:{c:1}},
+  ]},
+  define_low:{ph:1,title:'定義 — 浅い共感の結果',text:'ヒアリングが浅かったため、表面的な問題しか見えていない。',npcKey:null,insight:null,choices:[
+    {t:'もう一度住民に話を聞きに戻る',next:'define',s:{c:2}},
+    {t:'「増便要望書」を定義として進める',next:'ideate_low',s:{c:0}},
+  ]},
+  ideate:{ph:2,title:'アイデア — ブレスト',text:'「移動手段の不足で孤立する住民」という問題定義をもとに発散する。',npcKey:'team',insight:null,choices:[
+    {t:'批判なしで10案出す（乗り合いアプリ・ボランティア送迎・サテライト診療所など）',next:'proto',s:{cr:3}},
+    {t:'成功事例から「デマンドバス」1案に絞る',next:'proto_mid',s:{cr:1}},
+    {t:'最初から「バスアプリ開発」で進める',next:'proto_low',s:{cr:0}},
+  ]},
+  ideate_mid:{ph:2,title:'アイデア — デジタル視点',text:'デジタル格差という問題定義からアイデアを出す。',npcKey:null,insight:null,choices:[
+    {t:'デジタル支援と移動支援を組み合わせた複合案を考える',next:'proto',s:{cr:2}},
+    {t:'スマホ教室だけを提案する',next:'proto_low',s:{cr:0}},
+  ]},
+  ideate_low:{ph:2,title:'アイデア — 解決策先行',text:'問題定義が不明確なためアイデアが解決策ありきになっている。',npcKey:null,insight:null,choices:[
+    {t:'それでも複数案でブレインストーミングをする',next:'proto_mid',s:{cr:1}},
+    {t:'「増便要望書」を作るだけにする',next:'proto_low',s:{cr:0}},
+  ]},
+  proto:{ph:3,title:'実装 — プロトタイプ',text:'「地域送迎ボランティアアプリ」と「サテライト窓口」の2案を選んだ。どのレベルで作るか？',npcKey:'mentor',insight:null,choices:[
+    {t:'紙プロトタイプを2日で作り住民5人に見せる',next:'test',s:{a:3}},
+    {t:'実際のアプリを3ヶ月かけてフル開発する',next:'test_low',s:{a:1}},
+  ]},
+  proto_mid:{ph:3,title:'実装 — 限られたアイデア',text:'アイデアが少ないためプロトタイプの選択肢が狭い。',npcKey:null,insight:null,choices:[
+    {t:'小さく作って早くテストする',next:'test',s:{a:2}},
+    {t:'完成度を上げてからテストする',next:'test_low',s:{a:0}},
+  ]},
+  proto_low:{ph:3,title:'実装 — 方向性のずれ',text:'解決策が最初から固定されているためユーザーニーズとずれている可能性がある。',npcKey:null,insight:null,choices:[
+    {t:'住民に見せてフィードバックをもらう',next:'test',s:{a:1}},
+    {t:'このまま市に提出する',next:'end',s:{a:0}},
+  ]},
+  test:{ph:4,title:'テスト',text:'住民5人にプロトタイプを見せた。',npcKey:'feedback',insight:null,choices:[
+    {t:'フィードバックを全てメモし次のイテレーション課題リストを作る',next:'end',s:{a:2}},
+    {t:'「概ね好評だった」として終了する',next:'end',s:{a:0}},
+  ]},
+  test_low:{ph:4,title:'テスト — 遅すぎる検証',text:'完成品を持って行ったが「使いにくい」「声を聞いてほしかった」という反応だった。',npcKey:null,insight:null,choices:[
+    {t:'フィードバックを受け止め最初から設計し直す意思を示す',next:'end',s:{a:1}},
+    {t:'開発コストを理由に採用を強行する',next:'end',s:{a:0}},
+  ]},
+  end:{ph:4,title:'完了',text:'',npcKey:null,insight:null,choices:[]}
+};
+
+const npcPrompts={
+  tanaka:{sys:'あなたは田中さん（72歳、テクノラ市在住）。足が悪く、バスが減って病院に行くのが大変。スマホは難しくて使えない。困っているが明るく話してくれる。2〜3文で答えてください。',user:'研究者から話しかけられました。移動と生活の困りごとを話してください。'},
+  suzuki:{sys:'あなたは鈴木さん（42歳、商店主）。バスが減ってお客や従業員が来られなくなった。市の補助金申請がネットのみで困っている。現実的で少し疲れた口調。2〜3文で答えてください。',user:'研究者から声をかけられました。商売と交通の困りごとを話してください。'},
+  parent:{sys:'あなたはテクノラ市の保護者（38歳）。子どもの送迎にバスを使いたいが本数が少なくて困っている。子育て世代の不安を率直に話す。2〜3文で答えてください。',user:'研究者に観察されています。子育てと移動の困りごとを話してください。'},
+  team:{sys:'あなたはデザイン思考チームのメンバー。ブレインストーミングを盛り上げる役割。発散を促すアドバイスを1〜2文で言ってください。',user:'アイデアを出し合う場面です。一言励ましてください。'},
+  mentor:{sys:'あなたはデザイン思考のメンター。「早く・小さく・学ぶ」というプロトタイピングの哲学を1〜2文で伝えてください。',user:'プロトタイプをどう作るか迷っています。アドバイスをください。'},
+  feedback:{sys:'あなたは田中さん（72歳）。紙のプロトタイプを見せてもらった。具体的な使いにくい点（文字が小さい、言葉が難しいなど）を正直に1〜2文で話してください。',user:'プロトタイプを見せてもらいました。感想を教えてください。'},
+};
+
+const npcNames={tanaka:'田中さん（72歳）',suzuki:'鈴木さん（42歳、商店主）',parent:'保護者（38歳）',team:'チームメンバー',mentor:'メンター',feedback:'田中さん（フィードバック）'};
+
+function saveWorkerUrl(){
+  const v=document.getElementById('worker-url').value.trim();
+  if(!v||!v.startsWith('https://')){alert('https:// から始まるURLを入力してください');return;}
+  workerUrl=v.replace(/\/$/,'');
+  localStorage.setItem('dt_rpg_worker_url',workerUrl);
+  document.getElementById('cfg-box').style.display='none';
+  document.getElementById('game-area').style.display='block';
+  restart();
+}
+
+window.addEventListener('load',()=>{
+  const saved=localStorage.getItem('dt_rpg_worker_url');
+  if(saved){
+    workerUrl=saved;
+    document.getElementById('worker-url').value=saved;
+    document.getElementById('cfg-box').style.display='none';
+    document.getElementById('game-area').style.display='block';
+    restart();
+  }
+});
+
+function updatePh(idx){
+  for(let i=0;i<5;i++){
+    const el=document.getElementById('ps'+i);
+    el.className='ph';
+    if(i<idx)el.classList.add('done');
+    else if(i===idx)el.classList.add('active');
+  }
+}
+
+function addLog(t,isP=false){log.push({t,isP});renderLog();}
+function renderLog(){
+  document.getElementById('log-entries').innerHTML=log.slice(-10).map(e=>`<div class="le${e.isP?' ph-log':''}">${e.t}</div>`).join('');
+}
+
+async function callWorker(sys,user){
+  if(!workerUrl)return'（Worker URLが未設定です）';
+  try{
+    const r=await fetch(workerUrl+'/api/chat',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({system:sys,user:user})
+    });
+    const d=await r.json();
+    return d.text||d.error||'（応答なし）';
+  }catch(e){return'（Workerに接続できませんでした）';}
+}
+
+async function showNpc(key){
+  const area=document.getElementById('npc-area');
+  if(!key){area.innerHTML='';return;}
+  const name=npcNames[key]||key;
+  area.innerHTML=`<div class="npc-wrap"><div class="npc-name">${name}</div><div class="npc-text npc-loading">考えています...</div></div>`;
+  const p=npcPrompts[key];
+  const text=await callWorker(p.sys,p.user);
+  area.querySelector('.npc-text').classList.remove('npc-loading');
+  area.querySelector('.npc-text').textContent=text;
+}
+
+function showNode(key){
+  cur=key;
+  const n=nodes[key];
+  if(!n)return;
+  updatePh(n.ph);
+  document.getElementById('scene-lbl').textContent=n.title;
+  document.getElementById('story-text').textContent=n.text||'';
+  document.getElementById('insight-area').innerHTML=n.insight
+    ?`<div class="insight"><div class="insight-lbl">インサイト獲得</div>${n.insight}</div>`:'';
+  if(n.npcKey)showNpc(n.npcKey);
+  else document.getElementById('npc-area').innerHTML='';
+  const cEl=document.getElementById('choices');
+  cEl.innerHTML='';
+  if(n.choices&&n.choices.length){
+    n.choices.forEach(c=>{
+      const b=document.createElement('button');
+      b.className='ch';b.textContent=c.t;
+      b.onclick=()=>choose(c);
+      cEl.appendChild(b);
+    });
+  }
+  if(key==='end')showResult();
+}
+
+function choose(c){
+  if(c.s)Object.keys(c.s).forEach(k=>{score[k]=(score[k]||0)+c.s[k];});
+  const ph=nodes[cur]?.ph??0;
+  addLog(`[${phases[ph].l}] ${c.t.substring(0,38)}...`);
+  document.querySelectorAll('.ch').forEach(b=>b.disabled=true);
+  showNode(c.next);
+}
+
+function calcPct(){return Math.round(((score.e+score.c+score.cr+score.a)/11)*100);}
+
+function showResult(){
+  const pct=calcPct();
+  let title,text;
+  if(pct>=80){title='優秀なデザイン思考者！';text='ユーザーへの深い共感をもとに問題を正しく定義し、創造的な解決策を素早くテストした。人間中心設計の理想形に近いプロセスだ。';}
+  else if(pct>=50){title='まずまずのプロセス';text='一部のフェーズでは良い判断ができた。定義や発想フェーズをさらに深めると効果が高まる。';}
+  else{title='解決策優先になってしまった';text='ユーザーへの共感が浅く問題定義がずれてしまった。「まず聞く、次に考える」を心がけよう。';}
+  clearInterval(timerInt);
+  const el=Math.floor((Date.now()-startT)/1000);
+  const m=Math.floor(el/60),s=el%60;
+  document.getElementById('result-area').innerHTML=`
+    <div class="result-box">
+      <h3>${title}</h3>
+      <p>${text}</p>
+      <div class="score-grid">
+        <div class="sc"><div class="sc-l">共感</div><div class="sc-v">${score.e}/5</div></div>
+        <div class="sc"><div class="sc-l">定義</div><div class="sc-v">${score.c}/3</div></div>
+        <div class="sc"><div class="sc-l">発想</div><div class="sc-v">${score.cr}/3</div></div>
+        <div class="sc"><div class="sc-l">行動</div><div class="sc-v">${score.a}/5</div></div>
+        <div class="sc"><div class="sc-l">合計</div><div class="sc-v">${pct}%</div></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn" onclick="showSurvey()">アンケートに回答する</button>
+        <button class="btn" onclick="restart()">もう一度プレイ</button>
+        <button class="btn" onclick="resetWorker()">Worker URL を変更</button>
+      </div>
+    </div>`;
+  addLog(`終了 — ${pct}% / ${m}:${s.toString().padStart(2,'0')}`,true);
+}
+
+const surveyQs=[
+  {id:'q1',text:'このゲームはデザイン思考の理解に役立った',type:'likert'},
+  {id:'q2',text:'各フェーズの違いが理解できた',type:'likert'},
+  {id:'q3',text:'7分以内のプレイ時間は適切だった',type:'likert'},
+  {id:'q4',text:'最も難しかったフェーズはどれですか？',type:'likert5',opts:['共感','定義','アイデア','実装','テスト']},
+  {id:'q5',text:'改善点・感想（任意）',type:'text'},
+];
+
+function showSurvey(){
+  if(surveyDone){alert('アンケートは既に回答済みです。');return;}
+  let html=`<div class="survey-box"><h3>プレイ後アンケート</h3>`;
+  surveyQs.forEach(q=>{
+    html+=`<div class="q-block"><div class="q-text">${q.text}</div>`;
+    if(q.type==='likert'){
+      html+=`<div class="likert">`;
+      ['全く思わない','思わない','どちらでも','思う','とても思う'].forEach((l,i)=>{
+        html+=`<div class="lk" onclick="selLikert('${q.id}',${i+1},this)">${i+1}<br><span style="font-size:10px">${l}</span></div>`;
+      });
+      html+=`</div>`;
+    }else if(q.type==='likert5'){
+      html+=`<div class="likert">`;
+      q.opts.forEach((l,i)=>{
+        html+=`<div class="lk" onclick="selLikert('${q.id}',${i+1},this)">${l}</div>`;
+      });
+      html+=`</div>`;
+    }else{
+      html+=`<textarea id="${q.id}" placeholder="自由に記入してください"></textarea>`;
+    }
+    html+=`</div>`;
+  });
+  html+=`<div class="btn-row"><button class="btn" onclick="submitSurvey()">回答を記録してCSVダウンロード</button></div></div>`;
+  document.getElementById('survey-area').innerHTML=html;
+}
+
+function selLikert(qid,val,el){
+  surveyAns[qid]=val;
+  el.closest('.likert').querySelectorAll('.lk').forEach(e=>e.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+function submitSurvey(){
+  surveyQs.forEach(q=>{
+    if(q.type==='text'){const el=document.getElementById(q.id);if(el)surveyAns[q.id]=el.value||'';}
+  });
+  surveyDone=true;
+  const pct=calcPct();
+  const el=Math.floor((Date.now()-startT)/1000);
+  const m=Math.floor(el/60),s=el%60;
+  const row={session_id:sessionId,play_time:`${m}:${s.toString().padStart(2,'0')}`,score_empathy:score.e,score_clarity:score.c,score_creativity:score.cr,score_action:score.a,total_pct:pct,q1_useful:surveyAns.q1||'',q2_phase_diff:surveyAns.q2||'',q3_time_ok:surveyAns.q3||'',q4_hardest_phase:surveyAns.q4||'',q5_feedback:surveyAns.q5||''};
+  const headers=Object.keys(row).join(',');
+  const values=Object.values(row).map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',');
+  const csv='\uFEFF'+headers+'\n'+values;
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=`dt_rpg_${sessionId}.csv`;a.click();
+  URL.revokeObjectURL(url);
+  document.getElementById('survey-area').innerHTML=`
+    <div class="card">
+      <div class="notice">回答を記録しました。CSVファイルをダウンロードしました。</div>
+      <div style="font-size:13px;color:#888;margin-top:6px">セッションID: ${sessionId} / スコア: ${pct}% / 時間: ${m}:${s.toString().padStart(2,'0')}</div>
+    </div>`;
+}
+
+function startTimer(){
+  startT=Date.now();
+  timerInt=setInterval(()=>{
+    const el=Math.floor((Date.now()-startT)/1000);
+    const m=Math.floor(el/60),s=el%60;
+    document.getElementById('tval').textContent=`${m}:${s.toString().padStart(2,'0')}`;
+    const p=Math.min(100,Math.round((el/TOTAL)*100));
+    document.getElementById('tbar').style.width=p+'%';
+    document.getElementById('tpct').textContent=`${p}% / 7分`;
+    if(el>=TOTAL)document.getElementById('tbar').style.background='#e24b4a';
+  },1000);
+}
+
+function resetWorker(){
+  localStorage.removeItem('dt_rpg_worker_url');
+  workerUrl='';
+  document.getElementById('cfg-box').style.display='block';
+  document.getElementById('game-area').style.display='none';
+  clearInterval(timerInt);
+}
+
+function restart(){
+  score={e:0,c:0,cr:0,a:0};log=[];surveyDone=false;surveyAns={};sessionId=Date.now();
+  document.getElementById('result-area').innerHTML='';
+  document.getElementById('survey-area').innerHTML='';
+  clearInterval(timerInt);startTimer();
+  addLog('ゲーム開始',true);
+  showNode('start');
+}
+</script>
+</body>
+</html>
